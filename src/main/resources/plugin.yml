@@ -2,3 +2,8 @@ name: Zombies
 version: '1.0.0'
 main: me.sllly.zombies.Zombies
 api-version: '1.20'
+depend:
+  - OctaneEngine
+  - OctaneItemRegistry
+  - OctaneWorlds
+  - MythicMobs

@@ -1,4 +1,4 @@
-package me.sllly.zombies.mechanisms;
+package me.sllly.zombies.mechanisms.game;
 
 public enum PlayerStatus {
     ALIVE,

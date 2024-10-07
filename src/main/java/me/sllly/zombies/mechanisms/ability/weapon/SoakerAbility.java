@@ -2,7 +2,6 @@ package me.sllly.zombies.mechanisms.ability.weapon;
 
 import com.octane.sllly.octaneitemregistry.util.Util;
 import me.sllly.zombies.Zombies;
-import me.sllly.zombies.mechanisms.ZombiesPlayer;
 import org.bukkit.entity.*;
 
 public class SoakerAbility implements AbstractWeaponAbility {

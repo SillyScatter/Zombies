@@ -1,7 +1,6 @@
 package me.sllly.zombies.mechanisms.ability.weapon;
 
 import me.sllly.zombies.Zombies;
-import me.sllly.zombies.mechanisms.ZombiesPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 

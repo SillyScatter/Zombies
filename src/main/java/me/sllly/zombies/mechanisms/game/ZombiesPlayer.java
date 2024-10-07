@@ -1,8 +1,14 @@
-package me.sllly.zombies.mechanisms;
+package me.sllly.zombies.mechanisms.game;
 
+import me.sllly.zombies.Zombies;
+import me.sllly.zombies.mechanisms.Game;
 import me.sllly.zombies.mechanisms.ability.player.AbstractPlayerAbility;
+import me.sllly.zombies.mechanisms.weapons.Gun;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +29,29 @@ public class ZombiesPlayer {
         this.weaponAmount = weaponAmount;
         this.abilities = abilities;
         this.kills = kills;
+    }
+
+    public ZombiesPlayer(Player player){
+        this.player = player;
+        this.money = 0;
+        this.statistics = new HashMap<>();
+        this.status = PlayerStatus.ALIVE;
+        this.weaponAmount = 2;
+        this.abilities = new ArrayList<>();
+        this.kills = 0;
+    }
+
+    public void initializeInventory(Game game){
+        Inventory inventory = player.getInventory();
+        inventory.clear();
+        inventory.setItem(0, Zombies.gunConfig.knife.clone());
+        Gun defaultGun = Zombies.gunConfig.guns.get(game.getGameTemplate().defaultGunName());
+        if (defaultGun == null) {
+            inventory.setItem(1, Zombies.gunConfig.nullGun);
+        }else {
+            inventory.setItem(1, defaultGun.getFunctionalItemStack());
+        }
+        inventory.setItem(2, Zombies.gunConfig.nullGun);
     }
 
     public Player getPlayer() {

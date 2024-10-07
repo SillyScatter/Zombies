@@ -16,6 +16,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -31,12 +32,28 @@ public class Gun extends SimpleTool {
     private final List<String> rawInputAbilities;
     private final List<AbstractWeaponAbility> abilities;
 
-    public Gun(String name, WeaponUpgradeInfoList upgradeInfo, List<String> rawInputAbilities, List<AbstractWeaponAbility> abilities) {
+    public Gun(String name, WeaponUpgradeInfoList upgradeInfo, List<String> rawInputAbilities) {
         super(name, upgradeInfo.get(0).itemStack());
         this.name = name;
         this.upgradeInfo = upgradeInfo;
+        if (this.upgradeInfo.isEmpty()){
+          this.upgradeInfo.add(WeaponUpgradeInfo.getDefault());
+        }
         this.rawInputAbilities = rawInputAbilities;
-        this.abilities = abilities;
+        abilities = findAbilities();
+    }
+
+    private List<AbstractWeaponAbility> findAbilities() {
+        List<AbstractWeaponAbility> abilities = new ArrayList<>();
+        for (String abilityId : rawInputAbilities) {
+            AbstractWeaponAbility ability = Zombies.weaponAbilities.get(abilityId);
+            if (ability == null) {
+                Util.log("&cError: Ability with id " + abilityId + " not found.");
+                continue;
+            }
+            abilities.add(ability);
+        }
+        return abilities;
     }
 
     @Override
@@ -60,7 +77,10 @@ public class Gun extends SimpleTool {
         }
         WeaponUpgradeInfo weaponUpgradeInfo = upgradeInfo.get(gunUpgradeLevel);
         int penetration = weaponUpgradeInfo.penetration();
+        Util.log("&aPenetration: " + penetration);
+        Util.log("&aBeginning entity search");
         HashSet<LivingEntity> hitEntities = getHitEntities(player, penetration);
+        Util.log("&aFinished entity search with " + hitEntities.size() + " entities");
         for (LivingEntity entity : hitEntities) {
             double distance = player.getLocation().distance(entity.getLocation());
             double damage = weaponUpgradeInfo.distanceDamageFunction().setVariable("distance", distance).evaluate();
@@ -74,6 +94,15 @@ public class Gun extends SimpleTool {
     @Override
     public boolean canInteract(Player player, ItemStack itemStack) {
         return true;
+    }
+
+    @Override
+    public ItemStack getFunctionalItemStack() {
+        ItemStack itemStack = super.getFunctionalItemStack();
+        setUpradeLevel(itemStack, 0);
+        setClipAmmo(itemStack, upgradeInfo.get(0).clipAmmo());
+        setCurrentAvailableAmmo(itemStack, upgradeInfo.get(0).maxAmmo());
+        return itemStack;
     }
 
     public int getUpgradeLevel(ItemStack itemStack) {
@@ -98,34 +127,58 @@ public class Gun extends SimpleTool {
     }
 
     public int getClipAmmo(ItemStack itemStack) {
-//todo
-        return 0;
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return 0;
+        }
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null || !itemMeta.getPersistentDataContainer().has(GUN_CLIP_AMMO, PersistentDataType.INTEGER)) {
+            return 0;
+        }
+        return itemMeta.getPersistentDataContainer().get(GUN_CLIP_AMMO, PersistentDataType.INTEGER);
     }
 
     public void setClipAmmo(ItemStack itemStack, int ammo) {
-//todo
+        if (itemStack != null && itemStack.hasItemMeta()) {
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            if (itemMeta != null) {
+                itemMeta.getPersistentDataContainer().set(GUN_CLIP_AMMO, PersistentDataType.INTEGER, ammo);
+                itemStack.setItemMeta(itemMeta);
+            }
+        }
     }
 
     public int getCurrentAvailableAmmo(ItemStack itemStack) {
-//todo
-        return 0;
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return 0;
+        }
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null || !itemMeta.getPersistentDataContainer().has(GUN_CURRENT_AVAILABLE_AMMO, PersistentDataType.INTEGER)) {
+            return 0;
+        }
+        return itemMeta.getPersistentDataContainer().get(GUN_CURRENT_AVAILABLE_AMMO, PersistentDataType.INTEGER);
     }
 
     public void setCurrentAvailableAmmo(ItemStack itemStack, int ammo) {
-//todo
+        if (itemStack != null && itemStack.hasItemMeta()) {
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            if (itemMeta != null) {
+                itemMeta.getPersistentDataContainer().set(GUN_CURRENT_AVAILABLE_AMMO, PersistentDataType.INTEGER, ammo);
+                itemStack.setItemMeta(itemMeta);
+            }
+        }
     }
 
     public void reloadGun(ItemStack itemStack) {
-//todo
+        //todo
     }
 
     public boolean isReloading(ItemStack itemStack) {
-//todo
+        //todo
         return false;
     }
 
     public void setReloading(ItemStack itemStack) {
-//todo
+        //todo
     }
 
     public HashSet<LivingEntity> getHitEntities(Player player, int penetration) {
@@ -133,9 +186,12 @@ public class Gun extends SimpleTool {
         for (int i = 0; i < penetration; i++) {
             World world = player.getWorld();
             RayTraceResult result = world
-                    .rayTrace(player.getEyeLocation(), player.getEyeLocation().getDirection(), 5,
+                    .rayTrace(player.getEyeLocation(), player.getEyeLocation().getDirection(), 100,
                             FluidCollisionMode.NEVER, true, 0.05, (entity) -> {
                                 if (!(entity instanceof LivingEntity)){
+                                    return false;
+                                }
+                                if (entity instanceof Player){
                                     return false;
                                 }
                                 return !hitEntities.contains(entity);
