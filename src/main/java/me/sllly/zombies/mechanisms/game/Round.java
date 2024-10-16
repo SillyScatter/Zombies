@@ -62,6 +62,10 @@ public class Round {
             new BukkitRunnable(){
                 @Override
                 public void run() {
+                    if (game.getActiveWindows().isEmpty()){
+                        Util.log("&cNo windows found to spawn zombies in");
+                        return;
+                    }
                     for (String mobId : tickSpawnInfo.mobs().keySet()) {
                         int amount = tickSpawnInfo.mobs().get(mobId);
                         MythicMob mob = MythicBukkit.inst().getMobManager().getMythicMob(mobId).orElse(null);
@@ -87,7 +91,7 @@ public class Round {
         activeZombies.remove(zombieUUID);
         remainderToSpawn--;
         if (remainderToSpawn == 0 && activeZombies.isEmpty()){
-            if (game.getGameTemplate().roundInfo().rounds().size() == roundNumber-1){
+            if (game.getGameTemplate().roundInfo().rounds().size() == roundNumber){
                 game.end(GameCompletionReason.ALL_ROUNDS_COMPLETE);
                 return;
             }

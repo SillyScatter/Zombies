@@ -6,6 +6,7 @@ import me.sllly.zombies.commands.ZombiesCommandSystem;
 import me.sllly.zombies.files.configs.*;
 import me.sllly.zombies.files.logics.*;
 import me.sllly.zombies.listeners.PlayerListeners;
+import me.sllly.zombies.listeners.PowerSwitchListener;
 import me.sllly.zombies.listeners.ZombieDeathListener;
 import me.sllly.zombies.mechanisms.Game;
 import me.sllly.zombies.mechanisms.ability.player.AbstractPlayerAbility;
@@ -53,6 +54,7 @@ public final class Zombies extends JavaPlugin {
         new ZombiesCommandSystem("zombies").registerCommandBranch(this);
         getServer().getPluginManager().registerEvents(new ZombieDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListeners(), this);
+        getServer().getPluginManager().registerEvents(new PowerSwitchListener(), this);
     }
 
     @Override
@@ -117,6 +119,10 @@ public final class Zombies extends JavaPlugin {
         new AreaLogic().register();
         new WindowInfoLogic().register();
         new RoundInfoLogic().register();
+        new DoorInfoLogic().register();
+        new MobInfoLogic().register();
+        new PowerSwitchLogic().register();
+        new PackAPunchLogic().register();
     }
 
     public void registerGuns(){
@@ -148,7 +154,7 @@ public final class Zombies extends JavaPlugin {
             }
 
             GameTemplate gameTemplate = new GameTemplate(templateConfig.templateId, templateConfig.templateWorldName, templateConfig.roomNames, templateConfig.defaultRoomName, templateConfig.defaultGunName, templateConfig.spawnLocation,
-                    templateConfig.roundInfo, templateConfig.windowInfo, null, null, null, null, null, null, templateConfig.maxPlayers);
+                    templateConfig.roundInfo, templateConfig.windowInfo, templateConfig.doorInfo, null, null, null, null, null, templateConfig.mobInfo, templateConfig.maxPlayers);
             gameTemplates.put(templateConfig.templateId, gameTemplate);
             count++;
         }

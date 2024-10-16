@@ -20,6 +20,7 @@ public record GameTemplate(
         PowerSwitchInfo powerSwitchInfo,
         AbilitiesInfo abilitiesInfo,
         WeaponsChestInfo weaponsChestInfo,
+        MobInfo mobInfo,
         int maxPlayers
 ) {
 

@@ -27,4 +27,7 @@ public class SettingsConfig extends AnnotatedConfig {
     @ConfigField(path = "fallback-location")
     public Location fallbackLocation = new Location(Bukkit.getWorld("world"), 0, 150, 0);
 
+    @ConfigField(path = "reload-time", comment = "How many gameticks it takes to reload a gun.")
+    public int reloadTime = 20;
+
 }

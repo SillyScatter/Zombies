@@ -21,4 +21,16 @@ public class ActionsConfig extends AnnotatedConfig {
 
     @ConfigField(path = "game-end-win")
     public Actions gameWinEnd = Util.getDefaultTitleActions(Sound.ENTITY_FIREWORK_ROCKET_BLAST, "&a&lVictory!", "&6You have survived!");
+
+    @ConfigField(path = "out-of-ammo")
+    public Actions outOfAmmo = Util.getDefaultTitleActions(Sound.ENTITY_ITEM_BREAK, "&c&lOut of Ammo!", "&6Purchase more.");
+
+    @ConfigField(path = "not-enough-money")
+    public Actions notEnoughMoney = Util.getDefaultActions(Sound.BLOCK_NOTE_BLOCK_BASS, "&cNot enough money!");
+
+    @ConfigField(path = "receive-money")
+    public Actions receiveMoney = Util.getDefaultActions(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, "&e+ %amount% money!");
+
+    @ConfigField(path = "not-part-of-game")
+    public Actions notPartOfGame = Util.getDefaultActions(Sound.BLOCK_NOTE_BLOCK_BASS, "&cYou are not part of this game!");
 }

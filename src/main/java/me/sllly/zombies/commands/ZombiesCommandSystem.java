@@ -41,5 +41,13 @@ public class ZombiesCommandSystem extends SYSCommandBranch {
                     game.addPlayer(Bukkit.getPlayer(strings[1]));
                     Util.sendMessage(commandSender, "&aJoined game.");
                 }));
+
+        gameBranch.addCommand(new SYSCommand("end")
+                .setArguments(new GameArgument())
+                .executes((commandSender, strings) -> {
+                    Game game = Zombies.activeGames.get(UUID.fromString(strings[0]));
+                    game.end();
+                    Util.sendMessage(commandSender, "&aEnded game.");
+                }));
     }
 }

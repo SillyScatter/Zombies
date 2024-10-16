@@ -13,6 +13,6 @@ public record WindowInfo(List<SingularWindowInfo> windows) {
         Location c1 = new Location(Bukkit.getWorld("zombies"), -1, 102, 10);
         Location c2 = new Location(Bukkit.getWorld("zombies"), 1, 103, 10);
         Location windowSpawn = new Location(Bukkit.getWorld("zombies"), 0.5, 102, 14.5);
-        return new WindowInfo(List.of(new SingularWindowInfo(new Area(c1, c2), "main", windowSpawn)));
+        return new WindowInfo(List.of(new SingularWindowInfo(new Area(c1, c2), "green", windowSpawn)));
     }
 }

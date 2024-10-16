@@ -1,11 +1,13 @@
 package me.sllly.zombies.mechanisms.game;
 
+import com.octane.sllly.octaneitemregistry.objects.registry.OctaneItemStackRegistry;
 import me.sllly.zombies.Zombies;
 import me.sllly.zombies.mechanisms.Game;
 import me.sllly.zombies.mechanisms.ability.player.AbstractPlayerAbility;
 import me.sllly.zombies.mechanisms.weapons.Gun;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +54,43 @@ public class ZombiesPlayer {
             inventory.setItem(1, defaultGun.getFunctionalItemStack());
         }
         inventory.setItem(2, Zombies.gunConfig.nullGun);
+    }
+
+    public static ZombiesPlayer getZombiePlayer(Player player){
+        Game game = Game.getGame(player.getWorld());
+        if (game == null) {
+            return null;
+        }
+        return game.getPlayers().get(player.getUniqueId());
+    }
+
+    public void setPlayerExp(){
+        ItemStack itemStack = player.getInventory().getItemInMainHand();
+        if (itemStack.getType().isAir()) {
+            player.setTotalExperience(0);
+            return;
+        }
+        Gun gun = (Gun) OctaneItemStackRegistry.getOctaneItemStack(itemStack);
+        if (gun == null) {
+            player.setTotalExperience(0);
+            return;
+        }
+        int totalAmmo = gun.getCurrentAvailableAmmo(itemStack);
+        player.setLevel(totalAmmo);
+    }
+
+    public void addMoney(int amount) {
+        Map<String, String> placeHolders = Map.of("%amount%", amount + "");
+        Zombies.actionsConfig.receiveMoney.perform(player, placeHolders);
+        this.money += amount;
+    }
+
+    public void removeMoney(int amount) {
+        this.money -= amount;
+    }
+
+    public boolean hasEnoughMoney(int amount) {
+        return this.money >= amount;
     }
 
     public Player getPlayer() {

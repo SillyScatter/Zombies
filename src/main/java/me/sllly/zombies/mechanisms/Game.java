@@ -2,21 +2,18 @@ package me.sllly.zombies.mechanisms;
 
 import com.octanepvp.splityosis.octaneworldsapi.TaskStatus;
 import com.octanepvp.splityosis.octaneworldsapi.exceptions.InvalidWorldName;
-import io.lumine.mythic.api.mobs.MythicMob;
-import io.lumine.mythic.bukkit.BukkitAdapter;
-import io.lumine.mythic.bukkit.MythicBukkit;
-import io.lumine.mythic.core.mobs.ActiveMob;
 import me.sllly.zombies.Zombies;
 import me.sllly.zombies.exceptions.InvalidTemplateSettingsException;
 import me.sllly.zombies.mechanisms.game.*;
 import me.sllly.zombies.mechanisms.setup.GameTemplate;
-import me.sllly.zombies.mechanisms.setup.singulars.SingularRoundInfo;
+import me.sllly.zombies.mechanisms.setup.singulars.SingularDoorInfo;
 import me.sllly.zombies.mechanisms.setup.singulars.SingularWindowInfo;
 import me.sllly.zombies.utils.Util;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -30,6 +27,8 @@ public class Game {
     private final Set<String> openRooms;
     private final Set<Window> windows;
     private final Set<Window> activeWindows;
+    private final Set<Door> closedDoors;
+    private final PowerSwitch powerSwitch;
     private Round currentRound;
     private GameStatus gameStatus;
     private World world;
@@ -43,6 +42,8 @@ public class Game {
         windows = new HashSet<>();
         openRooms = new HashSet<>();
         activeWindows = new HashSet<>();
+        closedDoors = new HashSet<>();
+        powerSwitch = new PowerSwitch(this);
         this.currentRound = null;
         gameStatus = GameStatus.LOBBY;
         setUpWorld();
@@ -75,6 +76,7 @@ public class Game {
         fixLocations();
         setUpRooms();
         setUpWindows();
+        setUpDoors();
 
         onSetupComplete();
     }
@@ -107,6 +109,14 @@ public class Game {
         });
     }
 
+    public void setUpDoors(){
+        Util.log("&9Setting up doors, there are "+gameTemplate.doorInfo().doors().size()+" doors.");
+        for (SingularDoorInfo singularDoorInfo : gameTemplate.doorInfo().doors()) {
+            Door door = new Door(this, singularDoorInfo);
+            closedDoors.add(door);
+        }
+    }
+
     public void onSetupComplete(){
         Zombies.activeGames.put(gameID, this);
         scheduleStart();
@@ -115,8 +125,17 @@ public class Game {
     public void addPlayer(Player player){
         ZombiesPlayer zombiesPlayer = new ZombiesPlayer(player);
         zombiesPlayer.initializeInventory(this);
+        zombiesPlayer.setPlayerExp();
         players.put(player.getUniqueId(), zombiesPlayer);
         player.teleport(spawnLocation);
+        player.setLevel(0);
+        try {
+            player.setHealth(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+        }catch (Exception e){
+            player.setHealth(20);
+        }
+        player.setFoodLevel(20);
+        player.setGameMode(GameMode.ADVENTURE);
         players.values().forEach(zPlayer -> {
             Zombies.actionsConfig.playerJoinGame.perform(zPlayer.getPlayer(), Map.of("%player-name%", player.getName()));
         });
@@ -161,6 +180,8 @@ public class Game {
             case ALL_ROUNDS_COMPLETE -> {
                 for (ZombiesPlayer value : players.values()) {
                     Zombies.actionsConfig.gameWinEnd.perform(value.getPlayer());
+                    value.getPlayer().getInventory().clear();
+                    value.getPlayer().getActivePotionEffects().clear();
                 }
                 new BukkitRunnable(){
                     @Override
@@ -179,6 +200,23 @@ public class Game {
             value.getPlayer().teleport(spawnLocation);
         }
         Round.startRound(1, this);
+    }
+
+    public static Game getGame(UUID gameID){
+        return Zombies.activeGames.get(gameID);
+    }
+
+    public static Game getGame(World world){
+        String worldName = world.getName();
+        String[] split = worldName.split("_");
+        if (split.length < 3){
+            return null;
+        }
+        try {
+            return getGame(UUID.fromString(split[2]));
+        }catch (Exception e){
+            return null;
+        }
     }
 
     public UUID getGameID() {
@@ -227,5 +265,13 @@ public class Game {
 
     public Location getSpawnLocation() {
         return spawnLocation;
+    }
+
+    public Set<Door> getClosedDoors() {
+        return closedDoors;
+    }
+
+    public PowerSwitch getPowerSwitch() {
+        return powerSwitch;
     }
 }

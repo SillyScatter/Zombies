@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.ArrayList;
@@ -67,8 +68,17 @@ public class Gun extends SimpleTool {
             reloadGun(itemStack);
             return;
         }
+        int availableAmmo = getCurrentAvailableAmmo(itemStack);
+        if (availableAmmo <= 0) {
+            Zombies.actionsConfig.outOfAmmo.perform(player, null);
+            return;
+        }
+        availableAmmo--;
         setClipAmmo(itemStack, getClipAmmo(itemStack) - 1);
-        setCurrentAvailableAmmo(itemStack, getCurrentAvailableAmmo(itemStack) - 1);
+        clipAmmo--;
+        setCurrentAvailableAmmo(itemStack, availableAmmo);
+        player.setLevel(availableAmmo);
+        itemStack.setAmount(clipAmmo);
 
         int gunUpgradeLevel = getUpgradeLevel(itemStack);
         if (gunUpgradeLevel >= upgradeInfo.size()) {
@@ -77,10 +87,7 @@ public class Gun extends SimpleTool {
         }
         WeaponUpgradeInfo weaponUpgradeInfo = upgradeInfo.get(gunUpgradeLevel);
         int penetration = weaponUpgradeInfo.penetration();
-        Util.log("&aPenetration: " + penetration);
-        Util.log("&aBeginning entity search");
         HashSet<LivingEntity> hitEntities = getHitEntities(player, penetration);
-        Util.log("&aFinished entity search with " + hitEntities.size() + " entities");
         for (LivingEntity entity : hitEntities) {
             double distance = player.getLocation().distance(entity.getLocation());
             double damage = weaponUpgradeInfo.distanceDamageFunction().setVariable("distance", distance).evaluate();
@@ -88,6 +95,9 @@ public class Gun extends SimpleTool {
                 ability.onHit(player, entity, damage);
             }
             entity.damage(damage, player);
+        }
+        if (clipAmmo == 0) {
+            reloadGun(itemStack);
         }
     }
 
@@ -102,6 +112,7 @@ public class Gun extends SimpleTool {
         setUpradeLevel(itemStack, 0);
         setClipAmmo(itemStack, upgradeInfo.get(0).clipAmmo());
         setCurrentAvailableAmmo(itemStack, upgradeInfo.get(0).maxAmmo());
+        itemStack.setAmount(upgradeInfo.get(0).clipAmmo());
         return itemStack;
     }
 
@@ -168,17 +179,62 @@ public class Gun extends SimpleTool {
         }
     }
 
+    @Override
+    public ItemStack getNonFunctionalItemStack() {
+        ItemStack itemStack = super.getNonFunctionalItemStack();
+        itemStack.setAmount(upgradeInfo.get(0).clipAmmo());
+        return itemStack;
+    }
+
     public void reloadGun(ItemStack itemStack) {
-        //todo
+        setReloading(itemStack, true);
+        itemStack.setAmount(1);
+        int upgradeLevel = getUpgradeLevel(itemStack);
+        if (upgradeLevel >= upgradeInfo.size()) {
+            Util.log("&cError: Gun upgrade level is higher than the max upgrade level.");
+            return;
+        }
+        WeaponUpgradeInfo weaponUpgradeInfo = upgradeInfo.get(upgradeLevel);
+        int clipSize = weaponUpgradeInfo.clipAmmo();
+        int reloadTicks = Zombies.settingsConfig.reloadTime;
+        new BukkitRunnable() {
+            int count = 0;
+            @Override
+            public void run() {
+                itemStack.setAmount(getStackSizeAtTick(count, reloadTicks, clipSize));
+                count++;
+                if (count == (reloadTicks)) {
+                    setClipAmmo(itemStack, clipSize);
+                    setReloading(itemStack, false);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Zombies.plugin, 0, 1);
+    }
+
+    public int getStackSizeAtTick(int tick, int reloadTicks, int clipSize) {
+        return (int) Math.ceil((double) clipSize / reloadTicks * tick);
     }
 
     public boolean isReloading(ItemStack itemStack) {
-        //todo
-        return false;
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return false;
+        }
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null || !itemMeta.getPersistentDataContainer().has(GUN_RELOADING, PersistentDataType.BOOLEAN)) {
+            return false;
+        }
+        return itemMeta.getPersistentDataContainer().get(GUN_RELOADING, PersistentDataType.BOOLEAN);
     }
 
-    public void setReloading(ItemStack itemStack) {
-        //todo
+    public void setReloading(ItemStack itemStack, boolean reloading) {
+        if (itemStack != null && itemStack.hasItemMeta()) {
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            if (itemMeta != null) {
+                itemMeta.getPersistentDataContainer().set(GUN_RELOADING, PersistentDataType.BOOLEAN, reloading);
+                itemStack.setItemMeta(itemMeta);
+            }
+        }
     }
 
     public HashSet<LivingEntity> getHitEntities(Player player, int penetration) {
