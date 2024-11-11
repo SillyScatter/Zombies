@@ -154,7 +154,7 @@ public final class Zombies extends JavaPlugin {
             }
 
             GameTemplate gameTemplate = new GameTemplate(templateConfig.templateId, templateConfig.templateWorldName, templateConfig.roomNames, templateConfig.defaultRoomName, templateConfig.defaultGunName, templateConfig.spawnLocation,
-                    templateConfig.roundInfo, templateConfig.windowInfo, templateConfig.doorInfo, null, null, null, null, null, templateConfig.mobInfo, templateConfig.maxPlayers);
+                    templateConfig.roundInfo, templateConfig.windowInfo, templateConfig.doorInfo, null, null, templateConfig.powerSwitchInfo, null, null, templateConfig.mobInfo, templateConfig.maxPlayers);
             gameTemplates.put(templateConfig.templateId, gameTemplate);
             count++;
         }
